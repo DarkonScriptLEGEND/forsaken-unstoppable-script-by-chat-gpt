@@ -1,0 +1,124 @@
+-- Forsaken God Mode Supreme (Mobile Edition) 💀📱
+pcall(function() if game.CoreGui:FindFirstChild("GodGUI") then game.CoreGui.GodGUI:Destroy() end end)
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local Debris = game:GetService("Debris")
+local LocalPlayer = Players.LocalPlayer
+
+-- Create GUI button
+local sg = Instance.new("ScreenGui", game.CoreGui)
+sg.Name = "GodGUI"
+sg.ResetOnSpawn = false
+
+local button = Instance.new("TextButton", sg)
+button.Size = UDim2.new(0, 150, 0, 50)
+button.Position = UDim2.new(0, 15, 1, -65)
+button.Text = "Activate 🌀"
+button.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+button.TextColor3 = Color3.new(1, 1, 1)
+button.Font = Enum.Font.GothamBold
+button.TextScaled = true
+button.BorderSizePixel = 0
+Instance.new("UICorner", button).CornerRadius = UDim.new(0, 12)
+
+local active = false
+local lastSafe = Vector3.zero
+local cooldown = false
+
+-- Particle FX
+local function burstFX(pos)
+    local part = Instance.new("Part", workspace)
+    part.Anchored = true
+    part.CanCollide = false
+    part.Size = Vector3.new(1,1,1)
+    part.CFrame = CFrame.new(pos)
+    part.Transparency = 1
+
+    local fx = Instance.new("ParticleEmitter", part)
+    fx.Texture = "rbxassetid://258128463"
+    fx.Rate = 100
+    fx.Speed = NumberRange.new(8,12)
+    fx.Lifetime = NumberRange.new(0.3)
+    fx.Size = NumberSequence.new({NumberSequenceKeypoint.new(0,2), NumberSequenceKeypoint.new(1,0)})
+    fx.Color = ColorSequence.new(Color3.fromRGB(255,100,100), Color3.fromRGB(255,255,255))
+    Debris:AddItem(part, 1)
+end
+
+-- Teleport with FX
+local function safeTP(pos)
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    local hrp = char.HumanoidRootPart
+    burstFX(hrp.Position)
+    hrp.CFrame = CFrame.new(pos + Vector3.new(0,3,0))
+    burstFX(hrp.Position)
+
+    local sound = Instance.new("Sound", hrp)
+    sound.SoundId = "rbxassetid://9118823106"
+    sound.Volume = 1.5
+    sound:Play()
+    Debris:AddItem(sound, 2)
+end
+
+-- Killer Scanner & Dodge AI
+local function scanAndReact()
+    if not active then return end
+    pcall(function()
+        local myChar = LocalPlayer.Character
+        if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return end
+        local hrp = myChar.HumanoidRootPart
+        lastSafe = hrp.Position
+        for _, plr in pairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+                local dist = (hrp.Position - plr.Character.HumanoidRootPart.Position).Magnitude
+                if dist < 20 then
+                    -- dodge logic
+                    local away = (hrp.Position - plr.Character.HumanoidRootPart.Position).Unit
+                    local newPos = hrp.Position + away * 60 + Vector3.new(0,3,0)
+                    safeTP(newPos)
+                    wait(1)
+                end
+            end
+        end
+    end)
+end
+
+-- Anti-Stuck & Void Recovery
+RunService.Heartbeat:Connect(function()
+    if not active then return end
+    pcall(function()
+        local char = LocalPlayer.Character
+        if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+        local hrp = char.HumanoidRootPart
+        if hrp.Position.Y < -10 or (math.abs(hrp.Velocity.Y) < 0.1 and hrp.Position.Y < 3) then
+            safeTP(lastSafe)
+        else
+            lastSafe = hrp.Position
+        end
+    end)
+end)
+
+-- Constant Scanner
+task.spawn(function()
+    while true do
+        if active then
+            scanAndReact()
+        end
+        task.wait(0.25)
+    end
+end)
+
+-- Button Control
+button.MouseButton1Click:Connect(function()
+    if cooldown then return end
+    cooldown = true
+    active = not active
+    button.Text = active and "God Mode ✅" or "Activate 🌀"
+    if active then
+        safeTP(LocalPlayer.Character.HumanoidRootPart.Position)
+    end
+    wait(0.5)
+    cooldown = false
+end)
