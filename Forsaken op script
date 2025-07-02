@@ -73,7 +73,7 @@ local function scanAndReact()
         for _, plr in pairs(Players:GetPlayers()) do
             if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
                 local dist = (hrp.Position - plr.Character.HumanoidRootPart.Position).Magnitude
-                if dist < 20 then
+                if dist < 35 then
                     -- dodge logic
                     local away = (hrp.Position - plr.Character.HumanoidRootPart.Position).Unit
                     local newPos = hrp.Position + away * 60 + Vector3.new(0,3,0)
